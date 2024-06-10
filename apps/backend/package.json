@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "A simple CRUD to manage products",
+  "main": "src/index.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "npm test",
+    "start": "node --env-file=.env src/index.mjs",
+    "dev": "nodemon --env-file=.env src/index.mjs"
+  },
+  "author": "Lucas Barros",
+  "license": "ISC",
+  "dependencies": {
+    "cores": "^0.8.5",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  }
+}
