@@ -1,5 +1,6 @@
+import crypto, { hash } from 'node:crypto'
 import z from 'zod';
-import crypto from 'node:crypto'
+import prismaClient from '../utils/prismaClient.mjs';
 
 const productSchema = z.object({
     id: z.string().optional(),
@@ -7,13 +8,15 @@ const productSchema = z.object({
     preco: z.number().positive("Preço deve ser um valor positivo!"),
     descricao: z.string().optional(),
     quantidade: z.number().int().nonnegative("A quantidade deve ser um número inteiro não negativo!"),
+    
   });
-
-  let products = [];
 
 export default class ProductController{
     
-    index(request, response) {
+    async index(request, response) {
+       
+       const products = await prismaClient.product.findMany()
+       
         response.send({
             page: 1,
             pageSize: 20,
@@ -23,9 +26,10 @@ export default class ProductController{
 
     };
 
-    getOne(request, response) {   
+    async getOne(request, response) {   
         const {id} = request.params;
-        const product = products.find((product) => product.id === id );
+        
+        const product = await prismaClient.product.findUnique({ where: { id }});
 
         if (!product){
             return response.status(404).send({message: 'Product not found.'})
@@ -35,50 +39,61 @@ export default class ProductController{
 
     };
 
-    store(request, response) {
+    async store(request, response) {
         const product = request.body;
         const {sucess, data, error} = productSchema.safeParse(product);
 
         if (error) {
             return response.status(400).send(error);
         }
-
-        const [id] = crypto.randomUUID().split("-");
-
-        data.id = id
-
-        products.push(data);
-
-        response.send({message: 'store', data});
-       
+          
+        const newProduct = await prismaClient.product.create({data: {
+            nome: data.nome, 
+            preco: data.preco, 
+            descricao: data.descricao, 
+            quantidade: data.quantidade,
+            user: {
+                connectOrCreate: {
+                    create: {
+                        nome: 'Lucas Barros',
+                        email: 'lsb5@cesar.school',
+                        password: '123456'
+                        
+                    },
+                    where: { email: 'lsb5@cesar.school' },
+                },
+            },
+        }});
+   
+        response.send({message: 'store', newProduct});    
     };
 
-    update(request, response) {
+    async update(request, response) {
         const { id } = request.params;
         const { nome } = request.body;
         const { preco } = request.body;
         const { descricao } = request.body;
         const { quantidade } = request.body;
   
-        const newProducts = products.map((product) => {
-        if (product.id === id) {
-            return { ...product, nome, preco, descricao, quantidade };
-        }
-
-        return product;
-    });
-  
-    products = newProducts;
-    response.status(201).send({ message: 'Product Updated' });
+        await prismaClient.product.update({
+            data: {nome, preco, descricao, quantidade}, 
+            where: { id },
+        }); 
+    
+        response.status(201).send({ message: 'Product Updated' });
     };
 
-    destroy(request, response) {
+    async destroy(request, response) {
         
         const { id } = request.params;
 
-        products = products.filter((product) => product.id !== id);
+        try{
+            await prismaClient.product.delete({where: { id }});
+            response.status(204).send()
 
-        response.status(204).send()
+        }catch (error){
+            response.status(404).send({message: 'Product not found.'})
 
+        }
     };
 }
