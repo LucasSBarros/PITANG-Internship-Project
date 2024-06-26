@@ -7,15 +7,20 @@
   "scripts": {
     "test": "npm test",
     "start": "node --env-file=.env src/index.mjs",
-    "dev": "nodemon --env-file=.env src/index.mjs"
+    "dev": "nodemon --env-file=.env src/index.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": " prisma studio",
+    "prisma:migrate": "prisma migrate --dev"
   },
   "author": "Lucas Barros",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.15.0",
+    "bcrypt": "^5.1.1",
     "cores": "^0.8.5",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",

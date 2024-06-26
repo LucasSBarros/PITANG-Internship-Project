@@ -14,13 +14,21 @@ const productSchema = z.object({
 export default class ProductController{
     
     async index(request, response) {
+
+       let { page = 1, pageSize = 20 } = request.query
        
-       const products = await prismaClient.product.findMany()
+       page = parseInt(page);
+       pageSize = parseInt (pageSize);
+
+        const [productsTotalCount, products] = await Promise.all([
+            prismaClient.product.count(),
+            prismaClient.product.findMany({ take: pageSize })
+        ]);    
        
         response.send({
-            page: 1,
-            pageSize: 20,
-            totalCount: products.length,
+            page,
+            pageSize,
+            totalCount: productsTotalCount,
             items: products
         });
 
@@ -41,29 +49,28 @@ export default class ProductController{
 
     async store(request, response) {
         const product = request.body;
+        const loggedUser = request.logged_user;
+
         const {sucess, data, error} = productSchema.safeParse(product);
 
         if (error) {
             return response.status(400).send(error);
         }
           
-        const newProduct = await prismaClient.product.create({data: {
-            nome: data.nome, 
-            preco: data.preco, 
-            descricao: data.descricao, 
-            quantidade: data.quantidade,
-            user: {
-                connectOrCreate: {
-                    create: {
-                        nome: 'Lucas Barros',
-                        email: 'lsb5@cesar.school',
-                        password: '123456'
-                        
-                    },
-                    where: { email: 'lsb5@cesar.school' },
-                },
+        const newProduct = await prismaClient.product.create({
+            data: {
+                nome: data.nome, 
+                preco: data.preco, 
+                descricao: data.descricao, 
+                quantidade: data.quantidade,
+                user: {
+                    connect: { id: loggedUser.id },
+                  },
             },
-        }});
+            include: { user: true},
+        });
+
+        delete newProduct.user.password;
    
         response.send({message: 'store', newProduct});    
     };
